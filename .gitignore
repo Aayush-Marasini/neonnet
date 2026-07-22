@@ -1,2 +1,4 @@
 
-*.o\neonnet\n*.bin\n
+*.o
+neonnet
+*.bin
