@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "main.h"
+#include "model.h"
 int main(void){
 
 	srand(42);
@@ -47,6 +48,21 @@ int main(void){
 
 	printf("\n===Test Complete ===\n:");
 
+
+	printf("Loading model ...\n");
+	Model m = model_load("artifacts/weights.bin");
+
+	if (m.W1.data == NULL){
+		fprintf(stderr, "main: model load failed \n");
+		return 1;
+	}
+
+	printf("W1: %d x %d\n", m.W1.rows, m.W1.cols);	
+	printf("b1: %d x %d\n", m.b1.rows, m.b1.cols);	
+	printf("W2: %d x %d\n", m.W2.rows, m.W2.cols);	
+	printf("b2: %d x %d\n", m.b2.rows, m.b2.cols);
+
+	model_free(&m);
 
 	return 0;
 }
