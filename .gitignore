@@ -1,5 +1,10 @@
-
 *.o
 neonnet
 *.bin
 *.pt
+*.pyc
+__pycache__/
+venv/
+.venv/
+env/
+data/
