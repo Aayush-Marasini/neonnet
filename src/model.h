@@ -11,4 +11,6 @@ typedef struct
 Model model_load (const char *path);
 void model_free(Model *m);
 
+Matrix model_forward(const Model *m, const Matrix *input);
+
 #endif

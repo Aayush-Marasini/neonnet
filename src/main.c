@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
+#include <stdint.h>
 #include "main.h"
 #include "model.h"
 int main(void){
@@ -62,7 +64,134 @@ int main(void){
 	printf("W2: %d x %d\n", m.W2.rows, m.W2.cols);	
 	printf("b2: %d x %d\n", m.b2.rows, m.b2.cols);
 
-	model_free(&m);
 
-	return 0;
+	FILE *file = fopen( "artifacts/test_samples.bin", "rb");
+	if (file == NULL){
+	
+		fprintf(stderr, "main.c:Error opeaning file \n");
+		return 1;
+	}
+
+	uint32_t magic; 
+	
+	if(fread(&magic, sizeof(uint32_t), 1, file) != 1){
+	
+		fprintf(stderr,"main.c: failed to read magic number\n");
+		fclose(file);
+		return 1;
+	}
+
+	if (magic != 0x44415441){
+	
+		fprintf(stderr, "main.c: magic does not match\n");
+		fclose(file);
+		return 1;
+	}
+
+
+	uint32_t sample_count;
+	if(fread(&sample_count, sizeof(uint32_t), 1, file) != 1){
+	
+		fprintf(stderr,"main.c: could not retrive total number of samples\n");
+		fclose(file);
+		return 1;
+	}
+	
+
+	Matrix image_matrix = mat_alloc(1,784);
+	Matrix logits_matrix = mat_alloc(1,10);
+	float max_diff = 0.0f;
+	int mismatches = 0;
+
+	for ( uint32_t i = 0; i < sample_count; i++){
+			
+		uint32_t label;
+		if(fread(&label, sizeof(uint32_t), 1, file) !=1){
+				
+			fprintf(stderr,"main.c:could not read from file\n");
+			fclose(file);
+			mat_free(&image_matrix);
+			mat_free(&logits_matrix);
+			return 1;
+		}
+		if(fread(image_matrix.data, sizeof(float), 784, file)!=784){
+		
+			fprintf(stderr,"main.c:could not read image data from file\n");
+			fclose(file);
+			mat_free(&image_matrix);
+			mat_free(&logits_matrix);
+			return 1;
+		}
+		if(fread(logits_matrix.data, sizeof(float), 10 , file)!=10){
+		
+			fprintf(stderr,"main.c:could not read logits data from file\n");
+			fclose(file);
+			mat_free(&image_matrix);
+			mat_free(&logits_matrix);
+			return 1;
+		}
+
+		Matrix out = model_forward(&m, &image_matrix);
+		if (out.data == NULL){
+		
+			fprintf(stderr,"main.c: forward output data is null\n");
+			fclose(file);
+			mat_free(&image_matrix);
+			mat_free(&logits_matrix);
+			return 1;
+		}
+
+		for (int j = 0; j<10; j++){
+		
+			float diff = fabsf(out.data[j] - logits_matrix.data[j]);
+			if(diff>max_diff){
+			
+				max_diff = diff;
+			}
+		}
+
+		int my_pred = 0;
+		int pt_pred = 0;
+
+		float my_max = out.data[0];
+		float pt_max = logits_matrix.data[0];
+
+		for (int j = 1; j < 10; j++){
+		
+			if (out.data[j] > my_max){
+			
+				my_max = out.data[j];
+				my_pred = j;
+			}
+			if (logits_matrix.data[j] > pt_max){
+			
+				pt_max = logits_matrix.data[j];
+				pt_pred = j;
+			}
+		
+
+		}
+	if (my_pred != pt_pred){
+		
+		mismatches += 1;
+	}
+	mat_free(&out);
+	}
+
+printf("\n=== Test Results===\n");
+printf("Total Samples Processed: %u\n", sample_count);
+printf("Max Logit Difference:    %e\n", max_diff);
+printf("Prediction Mismatches:   %d\n", mismatches);
+if (max_diff < 1e-4 && mismatches == 0) {
+	printf("\nSTATUS: PASS. C model perfectly matches PyTorch.\n");
+	} 
+else {
+	printf("\nSTATUS: FAIL. Differences are too high.\n");
+        }
+
+fclose(file);
+mat_free(&image_matrix);
+mat_free(&logits_matrix);
+model_free(&m);
+return 0;
 }
