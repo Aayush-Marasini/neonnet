@@ -82,9 +82,47 @@ Matrix linear(const Matrix *input, const Matrix *W, const Matrix *b){
 		float added = result.data[i] + b->data[i];
 		result.data[i] = added;
 	}
-	
-
-
 	return result;
-
 }
+
+
+void softmax(Matrix *m){
+
+	if (m == NULL || m->data == NULL){
+	
+		fprintf(stderr, "layers.c: nothing in the softmax matrix\n");
+		return;
+	}
+
+	int size = m->rows * m->cols;
+    	if (size <= 0) {
+        	fprintf(stderr, "layers.c: softmax on empty matrix\n");
+        	return;
+    	}
+
+	float max_val = m->data[0];
+
+    	for (int i = 1; i < size; i++) {
+
+        	if (m->data[i] > max_val) {
+
+			max_val = m->data[i];
+        }
+    }
+
+    
+	float sum = 0.0f;
+   	for (int i = 0; i < size; i++) {
+        	
+		m->data[i] = expf(m->data[i] - max_val);
+        	sum += m->data[i];
+    	}
+
+    
+    
+    for (int i = 0; i < size; i++) {
+        m->data[i] /= sum;
+    }
+}
+
+
