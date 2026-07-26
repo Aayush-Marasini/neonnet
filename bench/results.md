@@ -24,8 +24,11 @@ The baseline implementation is heavily memory-bound, a hypothesis evidenced inde
 
 | Rung          | Latency µs (±CI) | Speedup vs naive | vs prev | Miss % | Max logit diff | Mismatches |
 |---------------|------------------|------------------|---------|--------|-----------------|------------|
-| naive (v0.3)  | 175.50 ±0.03     | 1.00×            | —       | 49.49% | 1.14e-5         | 0          |
-| i-k-j reorder |                  |                  |         |        |                 |            |
+| naive (v0.3)  | 175.50 ±0.03     | 1.00×          | —   | 49.49% | 1.14e-5         | 0          |
+| i-k-j reorder | 21.59 ±0.1       | 8.13×          | 8.13× | 0.54%  | 1.144409e-05    |          0 |
+
+    The reorder made the access stride-1. The 8x jump was because of two factors. the jump in IPC from 1.49 to 3.90. (2.6 x) higher. and also the instructions fell from 6.19 B to 2.034 B (3x fewer). 3 * 2.6 = 7.8. That explains some of the speedup. Fewer cycles per instruction  , pipeline is no longer stalling on cache misses. And fewer instructions for the identical arithmetic means each instruction is now doing more work. -fopt-info-vec and fmla were used to get these numbers. 
+
 | tiled         |                  |                  |         |        |                 |            |
 | aligned       |                  |                  |         |        |                 |            |
 | NEON          |                  |                  |         |        |                 |            |

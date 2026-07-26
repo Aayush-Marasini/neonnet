@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 #include "matrix.h"
 
 Matrix mat_alloc(int rows, int cols){
@@ -47,16 +48,21 @@ Matrix mat_mul(const Matrix *a, const Matrix *b){
 		fprintf(stderr, "mat_mul: allocation failed for result matrix\n");
 		return (Matrix){.rows = 0, .cols =0, .data= NULL};
 	}
-	for (int i = 0; i < a->rows; i++){
-	
-		for(int j = 0; j < b->cols; j++){
-			float sum = 0.0f;
-			for(int k = 0; k < a->cols ; k++){
-				sum += a->data[i * a->cols +k] * b-> data[ k * b->cols + j];	
-			}
-		result_mat.data[i * b-> cols + j] = sum;
-		}
-	}
+
+    memset(result_mat.data, 0, (size_t)result_mat.rows * result_mat.cols * sizeof(float));
+
+    for (int i = 0 ; i < a->rows; i++){
+
+        for (int k = 0; k < a-> cols; k++){
+            
+            float a_val = a->data[i * a->cols +k];
+            
+            for (int j = 0; j < b->cols ; j++){
+
+            result_mat.data[i * b->cols +j ] += a_val * b->data [k *b->cols +j];
+            }
+        }
+    }
 	return result_mat;
 
 }
