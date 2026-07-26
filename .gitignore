@@ -11,3 +11,4 @@ data/
 settings.json
 *.data
 neonnet_bench
+perf.data*
