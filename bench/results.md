@@ -31,6 +31,10 @@ i-k-j
 
 tiled
 The implementation of block tiling resulted in a performance regression, increasing mean latency to 27.09 µs and elevating the cache miss rate to 3.08% compared to the un-tiled i-k-j reorder. This degradation confirms that for single-sample edge inference (batch size M=1), loop blocking provides no computational benefit. Because the input vector is a single row, there is no spatial or temporal reuse of the weight matrix; each parameter is fetched exactly once per forward pass. It also  failed to capture any data reuse and instead actively disrupted the Cortex-A76 hardware prefetcher, which was previously optimizing the continuous linear memory access pattern of the i-k-j layout. The introduced loop mechanics acted  as instruction overhead, proving that cache tiling is counterproductive when the foundational math lacks dimensional reuse. 
+
+aligned
+Aligning to 64 bytes produced an unprecedinted 23% speedup (21.55->16.66us).Disassembly showed the aligned "mat_mul" is longer, real cause of this is a different vectorization strtegy. With guaranteed alignment, GCC emitted a 2x unrolled inner loop with two indepedent fmla accumulator chains, versus rung 1's single accumulator kernel. The dual accumulators hide FMA latency and halve loop-overhead instructions, which explains the cycle drop and the global instruction count fall.(2.03B -> 1.30B) despite a heavier more bloated loop body. The precise cost model trigger is compiler internal and not further investigated.NOTE: This means, GCC already applies multi accumulator optimization that i planned to add by hand. 
+
 ## Optimization Ladder (Phase 4 — filled per rung)
 
 | Rung          | Latency µs (±CI) | Speedup vs naive | vs prev | Miss % | Max logit diff | Mismatches |
@@ -38,5 +42,5 @@ The implementation of block tiling resulted in a performance regression, increas
 | naive (v0.3)  | 175.50 ±0.03     | 1.00×          | —   | 49.49% | 1.14e-5         | 0          |
 | i-k-j reorder | 21.59 �0.01      | 8.13×          | 8.13× | 0.54%  | 1.144409e-05    | 0          |
 | tiled         | 27.09 ±0.1       | 6.48×          | 0.80× | 3.08%  | 1.144409e-05    | 0          |
-| aligned       |                  |                  |         |        |                 |            |
+| aligned       | 16.66 ±0.3       | 10.54×         | 1.30× |6.0%    | 1.144409e-0 5   | 0          |
 | NEON          |                  |                  |         |        |                 |            |
