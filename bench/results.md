@@ -1,4 +1,10 @@
-
+| Rung          | Latency µs (±CI) | Speedup vs naive | vs prev | Miss % | Max logit diff | Mismatches |
+|---------------|------------------|------------------|---------|--------|-----------------|------------|
+| naive (v0.3)  | 175.50 ±0.03     | 1.00×          | —   | 49.49% | 1.14e-5         | 0          |
+| i-k-j reorder | 21.59 �0.01      | 8.13×          | 8.13× | 0.54%  | 1.144409e-05    |          0 |
+| tiled         |                  |                  |         |        |                 |            |
+| aligned       |                  |                  |         |        |                 |            |
+| NEON          |                  |                  |         |        |                 |            |
 ## Baseline (v0.3-baseline)
 
 ### Conditions
@@ -22,12 +28,15 @@ The baseline implementation is heavily memory-bound, a hypothesis evidenced inde
 
 i-k-j
  The reorder made the access stride-1. The 8x jump was because of two factors. the jump in IPC from 1.49 to 3.90. (2    .6 x) higher. and also the instructions fell from 6.19 B to 2.034 B (3x fewer). 3 * 2.6 = 7.8. That explains some of th    e speedup. Fewer cycles per instruction  , pipeline is no longer stalling on cache misses. And fewer instructions for t    he identical arithmetic means each instruction is now doing more work. -fopt-info-vec and fmla were used to get these n    umbers.
+
+tiled
+The implementation of block tiling resulted in a performance regression, increasing mean latency to 27.09 µs and elevating the cache miss rate to 3.08% compared to the un-tiled i-k-j reorder. This degradation confirms that for single-sample edge inference (batch size M=1), loop blocking provides no computational benefit. Because the input vector is a single row, there is no spatial or temporal reuse of the weight matrix; each parameter is fetched exactly once per forward pass. It also  failed to capture any data reuse and instead actively disrupted the Cortex-A76 hardware prefetcher, which was previously optimizing the continuous linear memory access pattern of the i-k-j layout. The introduced loop mechanics acted  as instruction overhead, proving that cache tiling is counterproductive when the foundational math lacks dimensional reuse. 
 ## Optimization Ladder (Phase 4 — filled per rung)
 
 | Rung          | Latency µs (±CI) | Speedup vs naive | vs prev | Miss % | Max logit diff | Mismatches |
 |---------------|------------------|------------------|---------|--------|-----------------|------------|
 | naive (v0.3)  | 175.50 ±0.03     | 1.00×          | —   | 49.49% | 1.14e-5         | 0          |
-| i-k-j reorder | 21.59 ±0.1       | 8.13×          | 8.13× | 0.54%  | 1.144409e-05    |          0 |
-| tiled         |                  |                  |         |        |                 |            |
+| i-k-j reorder | 21.59 �0.01      | 8.13×          | 8.13× | 0.54%  | 1.144409e-05    | 0          |
+| tiled         | 27.09 ±0.1       | 6.48×          | 0.80× | 3.08%  | 1.144409e-05    | 0          |
 | aligned       |                  |                  |         |        |                 |            |
 | NEON          |                  |                  |         |        |                 |            |
