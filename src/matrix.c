@@ -2,19 +2,21 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <stdint.h>
 #include "matrix.h"
-#define BK 64
-#define BN 64
 
 Matrix mat_alloc(int rows, int cols){
 
 	Matrix mat = {rows , cols, NULL};
-	mat.data = malloc( rows * cols * sizeof(float));
+    size_t raw_size = rows * cols * sizeof(float);
+    size_t padded_size = (raw_size + 63) & ~(size_t)63;
+
+    mat.data = (float *) aligned_alloc (64, padded_size);
 	if (mat.data == NULL){
 		fprintf(stderr, "Allocation failure\n");
 		return (Matrix){.rows = 0, .cols = 0 , .data = NULL};
 	}
-	return mat;
+    return mat;
 
 }
 
@@ -51,41 +53,33 @@ Matrix mat_mul(const Matrix *a, const Matrix *b){
 		return (Matrix){.rows = 0, .cols =0, .data= NULL};
 	}
 
-    memset(result_mat.data, 0, (size_t)result_mat.rows * result_mat.cols * sizeof(float));
+    size_t raw_res_size = result_mat.rows * result_mat.cols * sizeof(float);
+    size_t padded_res_size = (raw_res_size + 63) & ~(size_t)63;
 
-for (int i = 0; i < a->rows; i++) {
-    
-    for (int kk = 0; kk < a->cols; kk += BK) {
-        int k_end = (kk + BK < a->cols) ? (kk + BK) : a->cols;
-        
-        for (int jj = 0; jj < b->cols; jj += BN) {
-            int j_end = (jj + BN < b->cols) ? (jj + BN) : b->cols;
+    memset(result_mat.data, 0, padded_res_size);
+
+    for (int i = 0 ; i < a->rows; i++){
+
+        for (int k = 0; k < a-> cols; k++){
             
-            for (int k = kk; k < k_end; k++) {
-                
-                float a_val = a->data[i * a->cols + k];
-                
-                for (int j = jj; j < j_end; j++) {
-                    
-                    result_mat.data[i * b->cols + j] += a_val * b->data[k * b->cols + j];
-                    
-                }
+            float a_val = a->data[i * a->cols +k];
+            
+            for (int j = 0; j < b->cols ; j++){
+
+            result_mat.data[i * b->cols +j ] += a_val * b->data [k *b->cols +j];
             }
         }
     }
-}        
+	return result_mat;
 
-return result_mat;
 }
-
-
-
 
 void mat_print (const Matrix *m){
 	for (int i = 0; i < m->rows; i++){
 		for (int j = 0 ; j < m->cols ; j++){
 					printf ("%f\t", m->data[i* m->cols +j]);
 				}
+		printf("\n");
 	}
 	
 }
