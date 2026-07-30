@@ -2,20 +2,25 @@
 #include <stdint.h>
 #include <time.h>
 #include <math.h>
+#include <string.h>
 #include "layers.h"
 #include "model.h"
-
+int g_use_neon = 0;
 #define WARMUP_ITS  100
 #define MEASURE_ITS  10000
-
 uint64_t elapsed_ns(struct timespec start, struct timespec end){
 
 	return (uint64_t)(end.tv_sec - start.tv_sec) * 1000000000ULL + (uint64_t)(end.tv_nsec - start.tv_nsec);
 }
 
 
-int main (void){
-
+int main (int argc, char **argv){
+    if (argc > 1 && strcmp(argv[1], "neon") == 0) {
+        g_use_neon = 1;
+        printf("Benchmark: NEON kernel activated.\n");
+    } else {
+        printf("Benchmark: Baseline kernel activated.\n");
+    }
 	float input_data[784] = {0};
 	Matrix input = {1, 784, input_data};
         printf("Loading model ...\n");	

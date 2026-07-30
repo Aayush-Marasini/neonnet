@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g -O3 -mcpu=cortex-a76 -Isrc
-CORE_SRCS = src/matrix.c src/layers.c src/model.c
+CORE_SRCS = src/matrix.c src/layers.c src/model.c src/neon_kernel.c
 CORE_OBJS = $(CORE_SRCS:.c=.o)
 
 .PHONY: all clean

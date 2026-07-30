@@ -3,10 +3,17 @@
 #include <time.h>
 #include <math.h>
 #include <stdint.h>
+#include <string.h>
 #include "main.h"
 #include "model.h"
-int main(void){
-
+int g_use_neon = 0;
+int main(int argc, char **argv){
+    if (argc > 1 && strcmp(argv[1], "neon") == 0) {
+        g_use_neon = 1;
+        printf("Main: NEON kernel activated.\n");
+    } else {
+        printf("Main: Baseline kernel activated.\n");
+    }
 	srand(42);
 	
 	printf("=== Starting Matrix Library Tests ===\n\n");

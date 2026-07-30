@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<math.h>
 #include "layers.h"
+extern int g_use_neon;
 
 void relu(Matrix *m){
 
@@ -70,7 +71,12 @@ Matrix linear(const Matrix *input, const Matrix *W, const Matrix *b){
 		return emptymat;
 	}
 	
-	Matrix result = mat_mul (input, W);
+      Matrix result;
+      if (g_use_neon) {
+          result = neon_mat_mul(input, W);
+      } else {
+          result = mat_mul(input, W);
+      }
 
 	if (result.data == NULL){
 		fprintf(stderr,"layers.c: multiplied matrix data null\n");
