@@ -49,24 +49,19 @@ void mat_mul_into(const Matrix *restrict a, const Matrix *restrict b, Matrix *re
     assert(c->rows == a->rows && c->cols == b->cols);
     assert(c->data != a->data && c->data != b->data);
 
-    
     size_t raw_res_size = c->rows * c->cols * sizeof(float);
     size_t padded_res_size = (raw_res_size + 63) & ~(size_t)63;
     memset(c->data, 0, padded_res_size);
 
     const float *restrict a_data = a->data;
-    const float *restrict b_data = b->data;
-    float *restrict c_data = c->data;
+    const float *restrict b_data = __builtin_assume_aligned(b->data, 64);
+    float *restrict c_data = __builtin_assume_aligned(c->data, 64);
 
-    int a_rows = a->rows;
-    int a_cols = a->cols;
-    int b_cols = b->cols;
-
-    for (int i = 0 ; i < a_rows; i++) {
-        for (int k = 0; k < a_cols; k++) {
-            float a_val = a_data[i * a_cols + k];
-            for (int j = 0; j < b_cols; j++) {
-                c_data[i * b_cols + j] += a_val * b_data[k * b_cols + j];
+    for (int i = 0 ; i < a->rows; i++) {
+        for (int k = 0; k < a->cols; k++) {
+            float a_val = a_data[i * a->cols + k];
+            for (int j = 0; j < b->cols; j++) {
+                c_data[i * b->cols + j] += a_val * b_data[k * b->cols + j];
             }
         }
     }
