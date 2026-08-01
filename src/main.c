@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdalign.h>
 #include "main.h"
 #include "model.h"
 int g_use_neon = 0;
@@ -109,8 +110,12 @@ int main(int argc, char **argv){
 	Matrix logits_matrix = mat_alloc(1,10);
 	float max_diff = 0.0f;
 	int mismatches = 0;
-
-	for ( uint32_t i = 0; i < sample_count; i++){
+   
+    alignas(64) float my_logits_data[16] = {0};
+    Matrix my_logits = {1, 10, my_logits_data};
+	
+    
+    for ( uint32_t i = 0; i < sample_count; i++){
 			
 		uint32_t label;
 		if(fread(&label, sizeof(uint32_t), 1, file) !=1){
@@ -138,51 +143,40 @@ int main(int argc, char **argv){
 			return 1;
 		}
 
-		Matrix out = model_forward(&m, &image_matrix);
-		if (out.data == NULL){
-		
-			fprintf(stderr,"main.c: forward output data is null\n");
-			fclose(file);
-			mat_free(&image_matrix);
-			mat_free(&logits_matrix);
-			return 1;
-		}
+        model_forward(&m, &image_matrix, &my_logits);
 
-		for (int j = 0; j<10; j++){
-		
-			float diff = fabsf(out.data[j] - logits_matrix.data[j]);
-			if(diff>max_diff){
-			
-				max_diff = diff;
-			}
-		}
+        
+        for (int j = 0; j < 10; j++){
+                // Read from my_logits instead of out
+                float diff = fabsf(my_logits.data[j] - logits_matrix.data[j]);
+                if(diff > max_diff){
+                  max_diff = diff;
+                }
+        }
 
-		int my_pred = 0;
-		int pt_pred = 0;
+        int my_pred = 0;
+        int pt_pred = 0;
 
-		float my_max = out.data[0];
-		float pt_max = logits_matrix.data[0];
+        // Read from my_logits instead of out
+        float my_max = my_logits.data[0];
+        float pt_max = logits_matrix.data[0];
 
-		for (int j = 1; j < 10; j++){
-		
-			if (out.data[j] > my_max){
-			
-				my_max = out.data[j];
-				my_pred = j;
-			}
-			if (logits_matrix.data[j] > pt_max){
-			
-				pt_max = logits_matrix.data[j];
-				pt_pred = j;
-			}
-		
-
-		}
-	if (my_pred != pt_pred){
+        for (int j = 1; j < 10; j++){
+                // Read from my_logits instead of out
+                if (my_logits.data[j] > my_max){
+                  my_max = my_logits.data[j];
+                  my_pred = j;
+                }
+                if (logits_matrix.data[j] > pt_max){
+                  pt_max = logits_matrix.data[j];
+                  pt_pred = j;
+                }
+        }
+	
+        if (my_pred != pt_pred){
 		
 		mismatches += 1;
 	}
-	mat_free(&out);
 	}
 
 printf("\n=== Test Results===\n");

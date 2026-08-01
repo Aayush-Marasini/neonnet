@@ -1,5 +1,7 @@
 #include<stdio.h>
 #include<math.h>
+#include<assert.h>
+#include<stdalign.h>
 #include "layers.h"
 extern int g_use_neon;
 
@@ -55,42 +57,20 @@ int argmax(const Matrix*m){
 
 }
 
-Matrix linear(const Matrix *input, const Matrix *W, const Matrix *b){
-	// CALLER OWNS THIS MATRIX: must mat_free to prevent leaks
-	if ( input == NULL || input->data == NULL || W == NULL || W->data == NULL || b == NULL || b->data == NULL){
-	
-		fprintf(stderr,"layers.c: could not read in the linear function\n");
-		Matrix emptymat = {0,0,NULL};
-		return emptymat;
-	}
+void linear_into(const Matrix *input, const Matrix *W, const Matrix *b, Matrix *out) {
+    // CALLER OWNS THIS MATRIX: Caller must supply a pre-allocated buffer.
+    assert(input->cols == W->rows && b->cols == W->cols);
 
-	if (input->cols != W->rows || b->cols != W->cols){
-	
-		fprintf(stderr,"layers.c: matrix dimension mismatch\n");
-		Matrix emptymat = {0,0,NULL};
-		return emptymat;
-	}
-	
-      Matrix result;
-      if (g_use_neon) {
-          result = neon_mat_mul(input, W);
-      } else {
-          result = mat_mul(input, W);
-      }
+    if (g_use_neon) {
+        neon_mat_mul_into(input, W, out);
+    } else {
+        mat_mul_into(input, W, out);
+    }
 
-	if (result.data == NULL){
-		fprintf(stderr,"layers.c: multiplied matrix data null\n");
-		return result;	
-	}
-
-	for ( int i = 0; i < b->cols; i++){
-		
-		float added = result.data[i] + b->data[i];
-		result.data[i] = added;
-	}
-	return result;
+    for (int i = 0; i < b->cols; i++) {
+        out->data[i] += b->data[i];
+    }
 }
-
 
 void softmax(Matrix *m){
 

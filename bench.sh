@@ -8,7 +8,7 @@ taskset -c 3 ./neonnet_bench "$1"
 
 echo -e "\n=== 2. Hardware Counters (perf stat) ==="
 # sudo is required to read physical hardware counters
-sudo perf stat -e cycles,instructions,cache-references,cache-misses taskset -c 3 ./neonnet_bench
+sudo perf stat -e cycles,instructions,cache-references,cache-misses taskset -c 3 ./neonnet_bench "$1"
 
 echo -e "\n=== 3. Profiling Hotspots (perf record) ==="
 # sudo is required to sample the CPU

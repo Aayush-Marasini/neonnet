@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdalign.h>
 #include "model.h"
 #include "layers.h"
 
@@ -110,30 +111,13 @@ Model model_load (const char *path){
     return m;
 }
 
-Matrix model_forward(const Model *m, const Matrix *input){
+void model_forward(const Model* m, const Matrix* input, Matrix* out_logits) {
+    alignas(64) float hidden[128] = {0};
+    Matrix hidden_mat = {1, 128, hidden};
 
-	Matrix out1 = linear( input, &m->W1, &m->b1);
-
-	if(out1.data == NULL){
-	
-		fprintf(stderr, "model.c: layer 1 (W1) failed\n");
-		Matrix out = {0};
-		return out;
-	}
-
-	relu(&out1);
-
-	Matrix logits = linear (&out1, &m->W2, &m->b2);
-	if(logits.data == NULL){	
-		fprintf(stderr, "model.c:layer 2 (W2) failed \n");
-		Matrix out = {0};
-		mat_free(&out1);
-		return out;
-	}
-	
-	mat_free(&out1);
-	return logits;
-
+    linear_into(input, &m->W1, &m->b1, &hidden_mat);
+    relu(&hidden_mat);
+    linear_into(&hidden_mat, &m->W2, &m->b2, out_logits);
 }
 
 void model_free(Model *m){

@@ -3,6 +3,7 @@
 #include <time.h>
 #include <math.h>
 #include <string.h>
+#include <stdalign.h>
 #include "layers.h"
 #include "model.h"
 int g_use_neon = 0;
@@ -31,13 +32,13 @@ int main (int argc, char **argv){
 		return -1;
 	}
 
+    alignas(64) float my_logits_data[16] = {0};
+    Matrix my_logits = {1, 10, my_logits_data};
 
 	for (int i = 0; i < WARMUP_ITS; i++){
 	
-		Matrix out = model_forward(&m , &input);
-
-		mat_free(&out);
-	}
+        model_forward(&m, &input, &my_logits);
+    }
 
 	uint64_t t [MEASURE_ITS] = {0};
 	
@@ -50,16 +51,16 @@ int main (int argc, char **argv){
         		fprintf(stderr,"benchmark.c:clock_gettime start failed\n");
         		return 1;
     		}
-		Matrix out = model_forward(&m, &input);
 
-		if (clock_gettime(CLOCK_MONOTONIC, &end_time) != 0){
+        	model_forward(&m, &input, &my_logits);
+
+        if (clock_gettime(CLOCK_MONOTONIC, &end_time) != 0){
 		
 			fprintf(stderr,"benchmark.c : clock_gettime end failed\n");
 			return 1;
 		}
 
 		t[i] = elapsed_ns ( start_time, end_time);
-		mat_free(&out);
 	}
 
 	double running_sum = 0.0;
