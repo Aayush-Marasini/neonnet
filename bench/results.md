@@ -41,8 +41,8 @@ Rather than reproducing GCC's pre-unroll shape, we actively regressed past it to
 | tiled | 27.09 ±0.01 | 6.48x | 0.80x | 3.08% | 1.144409e-05 | 0 |
 | aligned (Rung 3 peak) | 16.66 ±0.03 | 10.54x | 1.30x | 6.0% | 1.144409e-05 | 0 |
 | NEON (hand, 1-acc) | 24.96 ±0.04 | 7.03x | 0.67x | 0.4% | 1.144409e-05 | 0 |
-| zero-alloc scalar | 24.30 ±0.03 | 7.22x | 1.02x | - | 1.144409e-05 | 0 |
-| zero-alloc NEON | 20.77 ±0.03 | 8.45x | 1.17x | - | 1.144409e-05 | 0 |
+| zero-alloc scalar | 24.30 ±0.03 | 7.22x | 0.69x (vs aligned) | 0.53% | 1.144409e-05 | 0 |
+| zero-alloc NEON | 20.77 ±0.03 | 8.45x | 1.20x (vs R4 NEON) | 0.53% | 1.144409e-05 | 0 |
 
 ### Rung 5 Final Findings
 **Validation:** Gate 1.144409e-05, 0 mismatches, 14/14 allocs, 0 valgrind errors, both paths.
