@@ -18,3 +18,6 @@ neonnet_bench: $(CORE_OBJS) bench/benchmark.o
 
 clean:
 	rm -f $(CORE_OBJS) src/main.o bench/benchmark.o neonnet neonnet_bench
+
+bench/l2_bw: bench/l2_bw.c
+	$(CC) $(CFLAGS) -o $@ $^ -lm

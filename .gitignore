@@ -11,4 +11,5 @@ data/
 settings.json
 *.data
 neonnet_bench
+bench/l2_bw
 perf.data*

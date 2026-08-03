@@ -50,3 +50,8 @@ Rather than reproducing GCC's pre-unroll shape, we actively regressed past it to
 **Finding 1:** Moving allocation out of the kernel cost the compiler its 2x unroll, causing the scalar baseline to regress 0.69x (16.66 µs -> 24.30 µs). Two candidate mechanisms were tested and falsified — the runtime alias check survives restrict on the parameters, and alignment hints do not restore the unroll. What triggered rung 3's codegen remains unidentified.
 
 **Finding 2:** Hand-written NEON went from losing to the compiler (24.96 vs 16.66) to beating it (20.77 vs 24.30). This occurred not because the hand kernel improved — it is the exact same kernel — but because the compiler lost an optimization the hand kernel never relied on.
+
+## Rung 6 Prediction: Chain-Shortening (Unroll k by 4)
+- **Predicted Latency:** ~16.99 µs
+- **Mechanism:** The kernel is front-end issue bound (IPC 3.87 on a 4-wide decode A76). By unrolling `k` by 4 and accumulating into a single register, we remove ~38,112 redundant `ldr`/`str` instructions per pass.
+- **Diagnostic:** Logit drift is expected to hold at exactly 1.144409e-05 because summation order is preserved.
